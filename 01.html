@@ -5,10 +5,54 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+    <style>
+        th {
+            background-color: gainsboro;
+        }
+
+        td {
+            align: "left";
+            padding: 10px;
+        }
+    </style>
 </head>
 
 <body>
-
+    <table border="1" cellspacing="0">
+        <thead>
+            <th align=" center" colspan="4">
+                运费详情
+            </th>
+        </thead>
+        <tr>
+            <th>区域</th>
+            <th>寄达地</th>
+            <th>首重(元/1000g)</th>
+            <th>续重(元/1000g)</th>
+        <tr>
+            <td rowspan="2">一区</th>
+            <td>浙江、上海、江苏</th>
+            <td>6</th>
+            <td>1</th>
+        </tr>
+        <tr>
+            <td>江西、安徽</th>
+            <td>7</th>
+            <td>1</th>
+        </tr>
+        <tr>
+            <td>二区</th>
+            <td>吉林、黑龙江、云南</th>
+            <td>10</th>
+            <td>6</th>
+        </tr>
+        <tr>
+            <td>三区</th>
+            <td>新疆、西藏</th>
+            <td>15</th>
+            <td>10</th>
+        </tr>
+    </table>
 </body>
 
 </html>
