@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <title>图书管理系统</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 2rem;
+        }
+
+        input {
+            margin: 0.5rem;
+        }
+
+        table,
+        th,
+        td {
+            border: 1px solid black;
+            border-collapse: collapse;
+            padding: 8px;
+        }
+
+        table {
+            margin-top: 1rem;
+        }
+
+        button {
+            margin-left: 4px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h2>添加/修改图书</h2>
+    <form id="bookForm">
+        ID: <input type="text" id="id" required>
+        标题: <input type="text" id="title" required>
+        作者: <input type="text" id="author" required>
+        库存: <input type="text" id="stock" required>
+        <button type="submit">提交</button>
+    </form>
+
+    <h2>图书列表</h2>
+    <table id="bookTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>标题</th>
+                <th>作者</th>
+                <th>库存</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+        const apiBase = "http://localhost:8080";
+
+        // 加载所有图书
+        async function loadBooks() {
+            const res = await fetch(`${apiBase}/books`);
+            const data = await res.json();
+            const tbody = document.querySelector("#bookTable tbody");
+            tbody.innerHTML = "";
+            data.forEach(book => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                <td>${book.id}</td>
+                <td>${book.title}</td>
+                <td>${book.author}</td>
+                <td>${book.stock}</td>
+                <td>
+                    <button onclick='editBook(${JSON.stringify(book)})'>编辑</button>
+                    <button onclick='deleteBook("${book.id}")'>删除</button>
+                </td>
+            `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // 添加或修改图书
+        document.getElementById("bookForm").addEventListener("submit", async e => {
+            e.preventDefault();
+            const book = {
+                id: document.getElementById("id").value,
+                title: document.getElementById("title").value,
+                author: document.getElementById("author").value,
+                stock: document.getElementById("stock").value,
+            };
+
+            // 判断是否是更新
+            const method = await checkIfExists(book.id) ? "PUT" : "POST";
+            const res = await fetch(`${apiBase}/book`, {
+                method: method,
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(book),
+            });
+
+            await loadBooks();
+            e.target.reset();
+        });
+
+        // 检查是否已存在图书（简易判断）
+        async function checkIfExists(id) {
+            const res = await fetch(`${apiBase}/books`);
+            const books = await res.json();
+            return books.some(book => book.id === id);
+        }
+
+        // 删除图书
+        async function deleteBook(id) {
+            await fetch(`${apiBase}/book/${id}`, { method: "DELETE" });
+            await loadBooks();
+        }
+
+        // 编辑图书（填入表单）
+        function editBook(book) {
+            document.getElementById("id").value = book.id;
+            document.getElementById("title").value = book.title;
+            document.getElementById("author").value = book.author;
+            document.getElementById("stock").value = book.stock;
+        }
+
+        // 页面加载后拉取数据
+        loadBooks();
+    </script>
+
+</body>
+
+</html>
