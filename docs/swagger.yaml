@@ -1,0 +1,130 @@
+basePath: /
+definitions:
+  main.Book:
+    properties:
+      author:
+        description: 作者
+        type: string
+      id:
+        description: 图书ID
+        type: string
+      stock:
+        description: 库存
+        type: string
+      title:
+        description: 标题
+        type: string
+    type: object
+  main.BookResponse:
+    properties:
+      book:
+        $ref: '#/definitions/main.Book'
+      message:
+        type: string
+    type: object
+  main.MessageResponse:
+    properties:
+      message:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: 这是一个使用 Gin 和 Swag 编写的简单图书管理 API。
+  title: 图书管理 API
+  version: "1.0"
+paths:
+  /book:
+    post:
+      consumes:
+      - application/json
+      description: 添加一本新图书
+      parameters:
+      - description: 图书信息
+        in: body
+        name: book
+        required: true
+        schema:
+          $ref: '#/definitions/main.Book'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.BookResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/main.MessageResponse'
+      summary: 添加图书
+      tags:
+      - 图书管理
+    put:
+      consumes:
+      - application/json
+      description: 更新已有图书的信息
+      parameters:
+      - description: 图书信息
+        in: body
+        name: book
+        required: true
+        schema:
+          $ref: '#/definitions/main.Book'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.BookResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/main.MessageResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/main.MessageResponse'
+      summary: 更新图书
+      tags:
+      - 图书管理
+  /book/{id}:
+    delete:
+      description: 通过 ID 删除图书
+      parameters:
+      - description: 图书ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.MessageResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/main.MessageResponse'
+      summary: 删除图书
+      tags:
+      - 图书管理
+  /books:
+    get:
+      description: 获取所有图书信息
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/main.Book'
+            type: array
+      summary: 查询所有图书
+      tags:
+      - 图书管理
+swagger: "2.0"
