@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Gin JWT 登录测试</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 2em;
+            max-width: 600px;
+            margin: auto;
+        }
+
+        input,
+        button {
+            padding: 8px;
+            margin: 6px 0;
+            width: 100%;
+        }
+
+        .result {
+            background: #f0f0f0;
+            padding: 1em;
+            margin-top: 1em;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Gin 后端接口测试</h1>
+
+    <h2>登录</h2>
+    <input type="text" id="username" placeholder="用户名" value="admin">
+    <input type="password" id="password" placeholder="密码" value="admin">
+    <button onclick="login()">登录并获取 Token</button>
+
+    <h2>获取图书列表</h2>
+    <button onclick="getBooks()">请求 /book/list</button>
+
+    <div class="result" id="output"></div>
+
+    <script>
+        let token = "";
+
+        function showResult(data) {
+            document.getElementById("output").textContent = JSON.stringify(data, null, 2);
+        }
+
+        async function login() {
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
+
+            const res = await fetch("http://localhost:8080/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username, password })
+            });
+
+            const data = await res.json();
+            showResult(data);
+
+            if (data.token) {
+                token = data.token;
+                alert("登录成功，Token 已保存！");
+            }
+        }
+
+        async function getBooks() {
+            if (!token) {
+                alert("请先登录！");
+                return;
+            }
+
+            const res = await fetch("http://localhost:8080/book/list", {
+                method: "GET",
+                headers: {
+                    "Authorization": token
+                }
+            });
+
+            const data = await res.json();
+            showResult(data);
+        }
+    </script>
+</body>
+
+</html>
