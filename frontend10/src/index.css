@@ -1,0 +1,10 @@
+/* 添加基础样式 */
+body {
+  margin: 0;
+  font-family: 'Arial', sans-serif;
+}
+
+.App {
+  text-align: center;
+  padding: 20px;
+}
