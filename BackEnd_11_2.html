@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图书管理系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+
+        .card {
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-section {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .book-list {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .book-item {
+            transition: all 0.3s ease;
+        }
+
+        .book-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1 class="text-center mb-4">图书管理系统</h1>
+
+        <!-- 操作面板 -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-section">
+                    <h3>添加/更新图书</h3>
+                    <form id="bookForm">
+                        <div class="mb-3">
+                            <label for="bookId" class="form-label">图书ID</label>
+                            <input type="text" class="form-control" id="bookId" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="bookTitle" class="form-label">标题</label>
+                            <input type="text" class="form-control" id="bookTitle" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="bookAuthor" class="form-label">作者</label>
+                            <input type="text" class="form-control" id="bookAuthor" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="bookStock" class="form-label">库存</label>
+                            <input type="text" class="form-control" id="bookStock" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary me-2" id="addBtn">添加</button>
+                        <button type="button" class="btn btn-warning me-2" id="updateBtn">更新</button>
+                        <button type="button" class="btn btn-danger" id="deleteBtn">删除</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="form-section">
+                    <h3>搜索图书</h3>
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="searchInput" placeholder="输入ID或标题搜索...">
+                    </div>
+                    <button class="btn btn-success w-100 mb-3" id="searchBtn">搜索</button>
+                    <button class="btn btn-secondary w-100" id="refreshBtn">刷新所有图书</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 图书列表 -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <h3>图书列表</h3>
+                <div class="book-list">
+                    <div class="row" id="bookList">
+                        <!-- 图书列表将通过JavaScript动态加载 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 图书详情模态框 -->
+    <div class="modal fade" id="bookModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">图书详情</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p><strong>ID:</strong> <span id="modalId"></span></p>
+                    <p><strong>标题:</strong> <span id="modalTitle"></span></p>
+                    <p><strong>作者:</strong> <span id="modalAuthor"></span></p>
+                    <p><strong>库存:</strong> <span id="modalStock"></span></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 全局变量
+        const API_BASE_URL = 'http://localhost:8082';
+        let books = [];
+
+        // DOM加载完成后执行
+        document.addEventListener('DOMContentLoaded', function () {
+            // 初始化模态框
+            const bookModal = new bootstrap.Modal(document.getElementById('bookModal'));
+
+            // 获取DOM元素
+            const bookForm = document.getElementById('bookForm');
+            const addBtn = document.getElementById('addBtn');
+            const updateBtn = document.getElementById('updateBtn');
+            const deleteBtn = document.getElementById('deleteBtn');
+            const searchBtn = document.getElementById('searchBtn');
+            const refreshBtn = document.getElementById('refreshBtn');
+            const searchInput = document.getElementById('searchInput');
+            const bookList = document.getElementById('bookList');
+
+            // 加载所有图书
+            loadAllBooks();
+
+            // 添加图书事件
+            addBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                addBook();
+            });
+
+            // 更新图书事件
+            updateBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                updateBook();
+            });
+
+            // 删除图书事件
+            deleteBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                deleteBook();
+            });
+
+            // 搜索图书事件
+            searchBtn.addEventListener('click', function () {
+                const keyword = searchInput.value.trim();
+                if (keyword) {
+                    searchBooks(keyword);
+                } else {
+                    loadAllBooks();
+                }
+            });
+
+            // 刷新图书事件
+            refreshBtn.addEventListener('click', function () {
+                loadAllBooks();
+            });
+
+            // 显示图书详情
+            bookList.addEventListener('click', function (e) {
+                if (e.target.classList.contains('view-btn')) {
+                    const bookId = e.target.getAttribute('data-id');
+                    const book = books.find(b => b.id === bookId);
+                    if (book) {
+                        showBookDetails(book);
+                    }
+                }
+            });
+        });
+
+        // 加载所有图书
+        function loadAllBooks() {
+            fetch(`${API_BASE_URL}/book`)  // 注意这里是单数/book
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP错误! 状态码: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    books = data;
+                    renderBookList(books);
+                })
+                .catch(error => {
+                    console.error('错误:', error);
+                    alert(`获取图书列表失败: ${error.message}\n请确保:\n1. 后端服务正在运行\n2. 访问地址正确`);
+                });
+        }
+
+        // 搜索图书
+        function searchBooks(keyword) {
+            // 前端筛选
+            const filteredBooks = books.filter(book =>
+                book.id.includes(keyword) ||
+                book.title.toLowerCase().includes(keyword.toLowerCase())
+            );
+            renderBookList(filteredBooks);
+        }
+
+        // 添加图书
+        function addBook() {
+            const book = getFormData();
+
+            fetch(`${API_BASE_URL}/book`, {  // 保持/book不变
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(book),
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => { throw new Error(err.message || '添加失败') });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    alert('图书添加成功');
+                    loadAllBooks();
+                    resetForm();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert(`添加图书失败: ${error.message}`);
+                });
+        }
+
+        // 更新图书
+        function updateBook() {
+            const book = getFormData();
+
+            fetch(`${API_BASE_URL}/book`, {  // 保持/book不变
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(book),
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => { throw new Error(err.message || '更新失败') });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    alert('图书更新成功');
+                    loadAllBooks();
+                    resetForm();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert(`更新图书失败: ${error.message}`);
+                });
+        }
+
+        // 删除图书
+        function deleteBook() {
+            const bookId = document.getElementById('bookId').value.trim();
+            if (!bookId) {
+                alert('请输入要删除的图书ID');
+                return;
+            }
+
+            if (!confirm(`确定要删除ID为 ${bookId} 的图书吗？`)) {
+                return;
+            }
+
+            fetch(`${API_BASE_URL}/book/${bookId}`, {  // 保持/book/:id不变
+                method: 'DELETE',
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => { throw new Error(err.message || '删除失败') });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    alert('图书删除成功');
+                    loadAllBooks();
+                    resetForm();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert(`删除图书失败: ${error.message}`);
+                });
+        }
+
+        // 获取表单数据
+        function getFormData() {
+            return {
+                id: document.getElementById('bookId').value.trim(),
+                title: document.getElementById('bookTitle').value.trim(),
+                author: document.getElementById('bookAuthor').value.trim(),
+                stock: document.getElementById('bookStock').value.trim()
+            };
+        }
+
+        // 重置表单
+        function resetForm() {
+            document.getElementById('bookForm').reset();
+        }
+
+        // 渲染图书列表
+        function renderBookList(books) {
+            const bookList = document.getElementById('bookList');
+            bookList.innerHTML = '';
+
+            if (books.length === 0) {
+                bookList.innerHTML = '<div class="col-12 text-center py-4">没有找到图书</div>';
+                return;
+            }
+
+            books.forEach(book => {
+                const bookItem = document.createElement('div');
+                bookItem.className = 'col-md-4 mb-3 book-item';
+                bookItem.innerHTML = `
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">${book.title}</h5>
+                            <p class="card-text"><small class="text-muted">作者: ${book.author}</small></p>
+                            <p class="card-text">库存: ${book.stock}</p>
+                            <button class="btn btn-sm btn-outline-primary view-btn" data-id="${book.id}">查看详情</button>
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <small class="text-muted">ID: ${book.id}</small>
+                        </div>
+                    </div>
+                `;
+                bookList.appendChild(bookItem);
+            });
+        }
+
+        // 显示图书详情
+        function showBookDetails(book) {
+            document.getElementById('modalId').textContent = book.id;
+            document.getElementById('modalTitle').textContent = book.title;
+            document.getElementById('modalAuthor').textContent = book.author;
+            document.getElementById('modalStock').textContent = book.stock;
+
+            const modal = bootstrap.Modal.getInstance(document.getElementById('bookModal'));
+            modal.show();
+        }
+    </script>
+</body>
+
+</html>
