@@ -1,0 +1,51 @@
+.App {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+    font-family: Arial, sans-serif;
+}
+
+.todo-form {
+    display: flex;
+    margin-bottom: 20px;
+}
+
+.todo-form input {
+    flex: 1;
+    padding: 8px;
+    font-size: 16px;
+}
+
+.todo-form button {
+    padding: 8px 16px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+.todo-list {
+    list-style: none;
+    padding: 0;
+}
+
+.todo-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+.todo-list li.completed span {
+    text-decoration: line-through;
+    color: #888;
+}
+
+.todo-list button {
+    background-color: #f44336;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+}
