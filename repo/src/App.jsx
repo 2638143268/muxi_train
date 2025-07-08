@@ -17,7 +17,8 @@ function App() {
             {currentUser ? (
               <>
                 <Link to="/post/new">发帖</Link>
-                <span>欢迎, {currentUser.name}</span>
+                {!currentUser.is_admin && <Link to="/my-posts">我的帖子</Link>}
+                <span>欢迎, {currentUser.name}{currentUser.is_admin && ' (管理员)'}</span>
                 <button onClick={() => {
                   localStorage.removeItem('user');
                   setCurrentUser(null);
@@ -39,6 +40,11 @@ function App() {
             <Route path="/post/new" element={
               <ProtectedRoute currentUser={currentUser}>
                 <NewPostPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/my-posts" element={
+              <ProtectedRoute currentUser={currentUser}>
+                <MyPostsPage currentUser={currentUser} />
               </ProtectedRoute>
             } />
             <Route path="/login" element={<LoginPage setCurrentUser={setCurrentUser} />} />
@@ -100,6 +106,35 @@ function HomePage({ currentUser }) {
     fetchPosts();
   }, []);
 
+  const handleDeletePost = async (postId) => {
+    if (!window.confirm('确定要删除这个帖子吗？')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:8082/repos/${postId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: currentUser.id.toString(),
+          is_admin: currentUser.is_admin || false
+        })
+      });
+
+      if (response.ok) {
+        // 刷新帖子列表
+        setPosts(posts.filter(post => post.id !== postId));
+        alert('删除成功');
+      } else {
+        const error = await response.json();
+        alert(error.error || '删除失败');
+      }
+    } catch (error) {
+      console.error('删除帖子失败:', error);
+      alert('删除失败，请重试');
+    }
+  };
+
   if (loading) return <div className="loading">加载中...</div>;
   if (error) return <div className="error">错误: {error}</div>;
 
@@ -111,14 +146,130 @@ function HomePage({ currentUser }) {
       ) : (
         <ul>
           {posts.map(post => (
-            <li key={post.id} onClick={() => navigate(`/post/${post.id}`)}>
-              <h3>{post.repo_name}</h3>
-              <p className="post-preview">{post.repo_url.substring(0, 100)}...</p>
-              <div className="post-meta">
-                <span>作者: {post.user_name || '匿名'}</span>
-                <span>点赞: {post.like_count || 0}</span>
-                <span>评论: {post.comment_count || 0}</span>
-                <span>发布时间: {new Date(post.created_at).toLocaleString()}</span>
+            <li key={post.id}>
+              <div onClick={() => navigate(`/post/${post.id}`)} style={{cursor: 'pointer'}}>
+                <h3>{post.repo_name}</h3>
+                <p className="post-preview">{post.repo_url.substring(0, 100)}...</p>
+                <div className="post-meta">
+                  <span>作者: {post.user_name || '匿名'}</span>
+                  <span>点赞: {post.like_count || 0}</span>
+                  <span>评论: {post.comment_count || 0}</span>
+                  <span>发布时间: {new Date(post.created_at).toLocaleString()}</span>
+                </div>
+              </div>
+              {currentUser && (currentUser.is_admin || currentUser.id === post.user_id) && (
+                <div className="post-actions">
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeletePost(post.id);
+                    }}
+                    className="delete-btn"
+                  >
+                    删除帖子
+                  </button>
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+// 我的帖子页面
+function MyPostsPage({ currentUser }) {
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchMyPosts = async () => {
+      try {
+        const response = await fetch(`http://localhost:8082/repos?user_id=${currentUser.id}`);
+
+        if (!response.ok) {
+          throw new Error('获取我的帖子失败');
+        }
+
+        const data = await response.json();
+        setPosts(Array.isArray(data) ? data : []);
+        setError(null);
+      } catch (err) {
+        console.error('获取我的帖子失败:', err);
+        setError(err.message);
+        setPosts([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (currentUser && currentUser.id) {
+      fetchMyPosts();
+    }
+  }, [currentUser]);
+
+  const handleDeletePost = async (postId) => {
+    if (!window.confirm('确定要删除这个帖子吗？')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:8082/repos/${postId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: currentUser.id.toString(),
+          is_admin: false
+        })
+      });
+
+      if (response.ok) {
+        setPosts(posts.filter(post => post.id !== postId));
+        alert('删除成功');
+      } else {
+        const error = await response.json();
+        alert(error.error || '删除失败');
+      }
+    } catch (error) {
+      console.error('删除帖子失败:', error);
+      alert('删除失败，请重试');
+    }
+  };
+
+  if (loading) return <div className="loading">加载中...</div>;
+  if (error) return <div className="error">错误: {error}</div>;
+
+  return (
+    <div className="post-list">
+      <h2>我的帖子</h2>
+      {posts.length === 0 ? (
+        <p>您还没有发布任何帖子</p>
+      ) : (
+        <ul>
+          {posts.map(post => (
+            <li key={post.id}>
+              <div onClick={() => navigate(`/post/${post.id}`)} style={{cursor: 'pointer'}}>
+                <h3>{post.repo_name}</h3>
+                <p className="post-preview">{post.repo_url.substring(0, 100)}...</p>
+                <div className="post-meta">
+                  <span>点赞: {post.like_count || 0}</span>
+                  <span>评论: {post.comment_count || 0}</span>
+                  <span>发布时间: {new Date(post.created_at).toLocaleString()}</span>
+                </div>
+              </div>
+              <div className="post-actions">
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeletePost(post.id);
+                  }}
+                  className="delete-btn"
+                >
+                  删除帖子
+                </button>
               </div>
             </li>
           ))}
@@ -249,6 +400,62 @@ function PostDetailPage({ currentUser }) {
     }
   };
 
+  const handleDeletePost = async () => {
+    if (!window.confirm('确定要删除这个帖子吗？')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:8082/repos/${id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: currentUser.id.toString(),
+          is_admin: currentUser.is_admin || false
+        })
+      });
+
+      if (response.ok) {
+        alert('删除成功');
+        navigate('/');
+      } else {
+        const error = await response.json();
+        alert(error.error || '删除失败');
+      }
+    } catch (error) {
+      console.error('删除帖子失败:', error);
+      alert('删除失败，请重试');
+    }
+  };
+
+  const handleDeleteComment = async (commentId) => {
+    if (!window.confirm('确定要删除这条评论吗？')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:8082/comments/${commentId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: currentUser.id.toString(),
+          is_admin: currentUser.is_admin || false
+        })
+      });
+
+      if (response.ok) {
+        setComments(comments.filter(comment => comment.id !== commentId));
+        alert('删除成功');
+      } else {
+        const error = await response.json();
+        alert(error.error || '删除失败');
+      }
+    } catch (error) {
+      console.error('删除评论失败:', error);
+      alert('删除失败，请重试');
+    }
+  };
+
   if (loading) return <div className="loading">加载中...</div>;
   if (error) return <div className="error">错误: {error}</div>;
   if (!post) return <div className="error">帖子不存在</div>;
@@ -264,6 +471,11 @@ function PostDetailPage({ currentUser }) {
         <button onClick={handleLike} className={isLiked ? 'liked' : ''}>
           {isLiked ? '已点赞' : '点赞'} ({post.like_count || 0})
         </button>
+        {currentUser && (currentUser.is_admin || currentUser.id === post.user_id) && (
+          <button onClick={handleDeletePost} className="delete-btn">
+            删除帖子
+          </button>
+        )}
       </div>
 
       <div className="comment-section">
@@ -289,6 +501,14 @@ function PostDetailPage({ currentUser }) {
                 <div className="comment-meta">
                   <span>用户: {comment.user_name || '匿名'}</span>
                   <span>{comment.created_at ? new Date(comment.created_at).toLocaleString() : '未知时间'}</span>
+                  {currentUser && (currentUser.is_admin || currentUser.id === comment.user_id) && (
+                    <button 
+                      onClick={() => handleDeleteComment(comment.id)}
+                      className="delete-btn small"
+                    >
+                      删除
+                    </button>
+                  )}
                 </div>
               </li>
             ))
@@ -542,6 +762,9 @@ function LoginPage({ setCurrentUser }) {
   return (
     <div className="login-page">
       <h2>登录</h2>
+      <div className="admin-hint">
+        <p>💡 管理员账号：admin / admin123</p>
+      </div>
       <form onSubmit={handleSubmit}>
         <div className="form-group">
           <label>用户名</label>
