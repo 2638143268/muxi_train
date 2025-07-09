@@ -147,7 +147,7 @@ function HomePage({ currentUser }) {
         <ul>
           {posts.map(post => (
             <li key={post.id}>
-              <div onClick={() => navigate(`/post/${post.id}`)} style={{cursor: 'pointer'}}>
+              <div onClick={() => navigate(`/post/${post.id}`)} style={{ cursor: 'pointer' }}>
                 <h3>{post.repo_name}</h3>
                 <p className="post-preview">{post.repo_url.substring(0, 100)}...</p>
                 <div className="post-meta">
@@ -159,7 +159,7 @@ function HomePage({ currentUser }) {
               </div>
               {currentUser && (currentUser.is_admin || currentUser.id === post.user_id) && (
                 <div className="post-actions">
-                  <button 
+                  <button
                     onClick={(e) => {
                       e.stopPropagation();
                       handleDeletePost(post.id);
@@ -251,7 +251,7 @@ function MyPostsPage({ currentUser }) {
         <ul>
           {posts.map(post => (
             <li key={post.id}>
-              <div onClick={() => navigate(`/post/${post.id}`)} style={{cursor: 'pointer'}}>
+              <div onClick={() => navigate(`/post/${post.id}`)} style={{ cursor: 'pointer' }}>
                 <h3>{post.repo_name}</h3>
                 <p className="post-preview">{post.repo_url.substring(0, 100)}...</p>
                 <div className="post-meta">
@@ -261,7 +261,7 @@ function MyPostsPage({ currentUser }) {
                 </div>
               </div>
               <div className="post-actions">
-                <button 
+                <button
                   onClick={(e) => {
                     e.stopPropagation();
                     handleDeletePost(post.id);
@@ -295,7 +295,7 @@ function PostDetailPage({ currentUser }) {
       try {
         setLoading(true);
         setError(null);
-        
+
         // 获取帖子详情
         const postRes = await fetch(`http://localhost:8082/repos/${id}`);
         if (postRes.ok) {
@@ -323,7 +323,7 @@ function PostDetailPage({ currentUser }) {
         setLoading(false);
       }
     };
-    
+
     if (id) {
       fetchData();
     }
@@ -360,6 +360,7 @@ function PostDetailPage({ currentUser }) {
     }
   };
 
+  // 提交评论
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
     if (!currentUser) {
@@ -502,7 +503,7 @@ function PostDetailPage({ currentUser }) {
                   <span>用户: {comment.user_name || '匿名'}</span>
                   <span>{comment.created_at ? new Date(comment.created_at).toLocaleString() : '未知时间'}</span>
                   {currentUser && (currentUser.is_admin || currentUser.id === comment.user_id) && (
-                    <button 
+                    <button
                       onClick={() => handleDeleteComment(comment.id)}
                       className="delete-btn small"
                     >
@@ -620,7 +621,7 @@ function RegisterPage({ setCurrentUser }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.name.trim() || !formData.username.trim() || !formData.password.trim()) {
       alert('所有字段都不能为空');
       return;
@@ -762,9 +763,6 @@ function LoginPage({ setCurrentUser }) {
   return (
     <div className="login-page">
       <h2>登录</h2>
-      <div className="admin-hint">
-        <p>💡 管理员账号：admin / admin123</p>
-      </div>
       <form onSubmit={handleSubmit}>
         <div className="form-group">
           <label>用户名</label>

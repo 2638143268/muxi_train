@@ -25,8 +25,6 @@ func isAdmin(username, password string) bool {
 
 func main() {
 	// 使用MySQL数据库
-	// 数据库连接字符串格式：username:password@tcp(host:port)/database?charset=utf8mb4&parseTime=True&loc=Local
-	// 请根据您的MySQL配置修改以下连接字符串
 	dsn := "root:123456@tcp(localhost:3306)/repo?charset=utf8mb4&parseTime=True&loc=Local"
 
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
